@@ -1,0 +1,11 @@
+/articles
+/venv
+/data
+/images
+__pycache__/
+*.py[cod]
+.env
+config.json
+test_*.py
+.DS_Store
+todo

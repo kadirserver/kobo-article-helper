@@ -1,0 +1,16 @@
+services:
+  kobo-article-helper:
+    build: .
+    image: kobo-article-helper:latest
+    container_name: kobo-article-helper
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-5030}:${PORT:-5030}"
+    volumes:
+      - /opt/kobo-article-helper/articles:/app/articles
+      - /opt/kobo-article-helper/images:/app/images
+      - /opt/kobo-article-helper/data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1

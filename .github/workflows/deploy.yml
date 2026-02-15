@@ -1,0 +1,43 @@
+name: Deploy
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment: kobo-article-helper
+    # Değişkenleri burada bir kez tanımlaman yeterli
+    env:
+      IMAP_SERVER: ${{ vars.IMAP_SERVER }}
+      EMAIL_USER: ${{ vars.EMAIL_USER }}
+      EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+      INSTAPAPER_USER: ${{ vars.INSTAPAPER_USER }}
+      INSTAPAPER_PASS: ${{ secrets.INSTAPAPER_PASS }}
+      API: ${{ vars.API }}
+      PORT: ${{ vars.PORT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create .env files
+        run: |
+          # Değişkenleri tek seferde .env dosyasına yaz
+          {
+            echo "IMAP_SERVER=${{ env.IMAP_SERVER }}"
+            echo "EMAIL_USER=${{ env.EMAIL_USER }}"
+            echo "EMAIL_PASS=${{ env.EMAIL_PASS }}"
+            echo "INSTAPAPER_USER=${{ env.INSTAPAPER_USER }}"
+            echo "INSTAPAPER_PASS=${{ env.INSTAPAPER_PASS }}"
+            echo "API=${{ env.API }}"
+            echo "PORT=${{ env.PORT }}"
+          } > .env
+          
+      - name: Start System (Zero Downtime)
+        run: |
+          # Down kullanmadan doğrudan güncelleme yap
+          docker compose up -d --build --remove-orphans
+
+      - name: Cleanup Old Images
+        if: always() # Hata alsa bile disk temizliği yapması için
+        run: docker image prune -f
