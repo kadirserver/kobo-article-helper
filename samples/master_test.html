@@ -1,0 +1,172 @@
+<!--
+  Master Test File: Comprehensive Image Processing Flow
+  This file tests all image processing rules in a single email execution.
+  Each test case includes an explanation of expected behavior.
+-->
+<html>
+
+<head>
+    <!--
+        TEST 1: Extracting Cover Image via og:image
+        Since this URL is an avatar (width=40), the system must REJECT it
+        and choose a fallback thumbnail from the body instead.
+    -->
+    <meta property="og:title" content="Kobo Article Helper - Master Test Sheet">
+    <meta property="og:description" content="A comprehensive test suite for all image processing features">
+    <meta property="og:image" content="https://picsum.photos/id/70/40/40">
+    <meta property="og:type" content="article">
+    <title>Master Test Sheet</title>
+</head>
+
+<body>
+    <h1>Master Test Sheet</h1>
+
+    <div style="background-color: #f1f5f9; padding: 15px; border-left: 4px solid #38bdf8; margin-bottom: 25px;"
+        id="test1-container">
+        <h3 style="margin-top: 0;">🧪 TEST 1: Fallback Thumbnail Selection</h3>
+        <p><strong>Scenario:</strong> The <code>og:image</code> in the head is an avatar (40x40). The system should
+            reject it and scan the body for the next valid image.</p>
+        <p><strong>Expected Result:</strong> The large image below ("Valid Article Image 1") should become the cover
+            image (Thumbnail) on the web interface. The <code>og:image</code> avatar should be ignored.</p>
+        <div id="test1-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- This should become the fallback thumbnail AND a body image -->
+    <img id="test1-img" src="https://picsum.photos/id/10/800/500" alt="Valid Article Image 1">
+
+    <hr>
+
+    <div style="background-color: #fce7f3; padding: 15px; border-left: 4px solid #f43f5e; margin-bottom: 25px;"
+        id="test2-container">
+        <h3 style="margin-top: 0;">🧪 TEST 2: Avatar Filtering (border-radius)</h3>
+        <p><strong>Scenario:</strong> An image tag contains <code>border-radius: 50%</code>, which indicates it's an
+            author avatar.</p>
+        <p><strong>Expected Result:</strong> If this test is successful, you <strong>SHOULD NOT</strong> see the
+            circular image below in the processed article.</p>
+        <div id="test2-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- AVATAR 1: Round avatar with border-radius -> should be filtered out -->
+    <img id="test2-img" src="https://picsum.photos/id/64/60/60"
+        style="border-radius: 50%; width: 60px; height: 60px; margin-right: 10px;" alt="Author Avatar">
+
+    <hr>
+
+    <div style="background-color: #fce7f3; padding: 15px; border-left: 4px solid #f43f5e; margin-bottom: 25px;"
+        id="test3-container">
+        <h3 style="margin-top: 0;">🧪 TEST 3: Small Icon Filtering (HTML attributes)</h3>
+        <p><strong>Scenario:</strong> An image tag has <code>width="30"</code> and <code>height="30"</code> attributes,
+            making it a small UI icon.</p>
+        <p><strong>Expected Result:</strong> If this test is successful, you <strong>SHOULD NOT</strong> see the small
+            icon below.</p>
+        <div id="test3-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- SMALL ICON: Size via HTML attributes -> should be filtered out -->
+    <img id="test3-img" src="https://picsum.photos/id/65/60/60" width="30" height="30" alt="Small UI Icon">
+
+    <hr>
+
+    <div style="background-color: #fce7f3; padding: 15px; border-left: 4px solid #f43f5e; margin-bottom: 25px;"
+        id="test4-container">
+        <h3 style="margin-top: 0;">🧪 TEST 4: Tracking Pixel / Too Small Image</h3>
+        <p><strong>Scenario:</strong> The original image is extremely small (e.g., 1x1 pixels) physically after
+            downloading.</p>
+        <p><strong>Expected Result:</strong> If this test is successful, the hidden tracking pixel should be removed and
+            not saved as a local image file.</p>
+        <div id="test4-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- TRACKING PIXEL: 1x1 image -> should fail download size check -->
+    <img id="test4-img" src="https://picsum.photos/id/72/1/1" alt="Tracking Pixel">
+
+    <hr>
+
+    <div style="background-color: #fef08a; padding: 15px; border-left: 4px solid #eab308; margin-bottom: 25px;"
+        id="test5-container">
+        <h3 style="margin-top: 0;">🧪 TEST 5: Duplicate Image Detection</h3>
+        <p><strong>Scenario:</strong> The same "Valid Article Image 1" from the top of the page is used a second time
+            below.</p>
+        <p><strong>Expected Result:</strong> You should see the image below, but the system should only download it
+            <strong>ONCE</strong>. It will internally map this second occurrence to the previously downloaded file.
+        </p>
+        <div id="test5-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- DUPLICATE IMAGE: Same URL as the first valid image -->
+    <img id="test5-img" src="https://picsum.photos/id/10/800/500" alt="Valid Article Image 1 (Duplicate)">
+
+    <hr>
+
+    <div style="background-color: #dcfce7; padding: 15px; border-left: 4px solid #22c55e; margin-bottom: 25px;"
+        id="test6-container">
+        <h3 style="margin-top: 0;">🧪 TEST 6: Standard Image Processing</h3>
+        <p><strong>Scenario:</strong> A completely normal, high-quality photograph.</p>
+        <p><strong>Expected Result:</strong> You should see the image below properly displayed. Behind the scenes, it
+            was downloaded and converted to an optimized JPEG, changing its extension to `.jpg`.</p>
+        <div id="test6-result"
+            style="margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; display: none;"></div>
+    </div>
+
+    <!-- NORMAL IMAGE 2: Should process normally -->
+    <img id="test6-img" src="https://picsum.photos/id/11/600/400" alt="Valid Article Image 2">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            function showSuccess(testId, message) {
+                const el = document.getElementById(testId + '-result');
+                el.style.display = 'block';
+                el.style.backgroundColor = '#dcfce7';
+                el.style.color = '#15803d';
+                el.innerHTML = '✅ <strong>Test Successful:</strong> ' + message;
+            }
+
+            function showError(testId, message) {
+                const el = document.getElementById(testId + '-result');
+                el.style.display = 'block';
+                el.style.backgroundColor = '#fee2e2';
+                el.style.color = '#b91c1c';
+                el.innerHTML = '❌ <strong>Test Failed:</strong> ' + message;
+            }
+
+            // TEST 1 & 5 & 6 (Positive checks: Image must be processed into local /images/... path)
+            const checkProcessedImage = (testId, expectedExt) => {
+                const img = document.getElementById(testId + '-img');
+                if (!img) return showError(testId, 'Image element not found in DOM!');
+
+                const src = img.getAttribute('src');
+                if (src.includes('/images/') && src.endsWith(expectedExt)) {
+                    showSuccess(testId, `Image was successfully downloaded and processed locally.<br>📍 <strong>File Path:</strong> <code>${src}</code><br>🖼️ <strong>Format:</strong> <code>${expectedExt.toUpperCase()}</code>`);
+                } else {
+                    showError(testId, `Image was not converted to local format correctly.<br><strong>Expected format:</strong> ${expectedExt}<br><strong>Current source:</strong> ${src}`);
+                }
+            };
+
+            // TEST 2 & 3 & 4 (Negative checks: Image must NOT exist in the DOM)
+            const checkRemovedImage = (testId) => {
+                // If the element doesn't exist, it means the python backend stripped it out (SUCCESS)
+                const img = document.getElementById(testId + '-img');
+                if (!img) {
+                    showSuccess(testId, 'Garbage/invalid image was successfully detected and removed by the system. You no longer see this image in the page source.');
+                } else {
+                    showError(testId, 'System failed to remove this invalid image! The image is still present in the HTML.');
+                }
+            };
+
+            // Run Evaluators
+            checkProcessedImage('test1', '.jpg');
+            checkRemovedImage('test2');
+            checkRemovedImage('test3');
+            checkRemovedImage('test4');
+            checkProcessedImage('test5', '.jpg');
+            checkProcessedImage('test6', '.jpg');
+        });
+    </script>
+</body>
+
+</html>
