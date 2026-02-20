@@ -124,7 +124,7 @@ def serve_article(filename):
             margin: 10px 0;
             font-size: 0.9em;
         ">
-            <a href="{public_url}" target="_blank" style="color: #0066cc; text-decoration: underline;">View article on website</a>
+            <a href="{public_url}" target="_blank" style="color: #0066cc; text-decoration: underline;">makaleyi web sitesinde görüntüle</a>
             <span style="margin-left: 8px; color: #999; font-size: 0.85em;">({date_str})</span>
         </p>
         '''

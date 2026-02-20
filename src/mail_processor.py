@@ -17,6 +17,7 @@ from src.image_utils import (
 )
 from src.cleanup import cleanup_old_articles
 from src.instapaper import send_to_instapaper
+from src.utils import format_turkish_date
 
 
 def process_message(msg):
@@ -50,9 +51,15 @@ def process_message(msg):
         else:
             # If timezone-aware, convert directly to TR
             mail_date = mail_date.astimezone(TR_TZ)
-        mail_date_str = mail_date.strftime("%d.%m.%Y %H:%M")
+        
+        # FIX: Check for year 1900 (common fallback or parsing error)
+        if mail_date.year <= 1900:
+            print(f"⚠️ Invalid date detected ({mail_date}), falling back to current time.")
+            mail_date = datetime.now(TR_TZ)
+            
+        mail_date_str = format_turkish_date(mail_date)
     else:
-        mail_date_str = datetime.now(TR_TZ).strftime("%d.%m.%Y %H:%M")
+        mail_date_str = format_turkish_date(datetime.now(TR_TZ))
 
     mapping = {
         "og_image_local": None,
