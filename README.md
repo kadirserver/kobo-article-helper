@@ -74,10 +74,19 @@ python main.py
 
 ## File Structure
 
-- `main.py`: The core application logic containing the IMAP listener, Flask web server, and image processing engine.
+- `main.py`: Entry point — starts the web server and mail listener.
+- `src/`: Core application modules:
+    - `config.py`: Configuration, environment variables, Flask app instance.
+    - `image_utils.py`: Image filtering, hashing, thumbnail processing.
+    - `cleanup.py`: Article deletion and old article cleanup.
+    - `routes.py`: Flask routes (article serving, image serving, index page).
+    - `instapaper.py`: Instapaper API integration.
+    - `mail_processor.py`: Email processing and IMAP listener.
 - `articles/`: Directory where processed HTML articles are stored.
 - `images/`: Directory where downloaded and optimized images are saved.
 - `data/`: Stores JSON metadata mappings for each article.
+- `sample/`: Sample HTML files for integration testing.
+- `tests/`: Test scripts.
 - `Dockerfile`: Configuration for building the Docker image.
 - `docker-compose.yaml`: Service definition for orchestration.
 
