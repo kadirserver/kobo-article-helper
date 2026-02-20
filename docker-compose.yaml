@@ -14,3 +14,8 @@ services:
       - /opt/kobo-article-helper/data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
