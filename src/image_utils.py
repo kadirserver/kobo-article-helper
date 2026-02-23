@@ -7,7 +7,7 @@ import numpy as np
 import imagehash
 from PIL import Image
 
-from src.config import IMAGES_DIR
+from src.config import IMAGES_DIR, logger
 
 # --- IMAGE FILTERING HELPERS ---
 seen_hashes = {}  # Duplicate detection: {hash: filename}
@@ -111,7 +111,7 @@ def extract_og_image(content):
 def download_and_convert_thumbnail(img_url, target_format='PNG'):
     """Download image, convert to specified format, save with UUID and return new path"""
     try:
-        print(f"⬇️ Downloading image: {img_url} (Target: {target_format})")
+        logger.info(f"Downloading image: {img_url} (Target: {target_format})")
         response = requests.get(img_url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
         response.raise_for_status()
         
@@ -120,33 +120,33 @@ def download_and_convert_thumbnail(img_url, target_format='PNG'):
         orig_format = img.format # PNG, JPEG, etc.
         
         width, height = img.size
-        print(f"📏 Image size: {width}x{height} ({orig_format})")
+        logger.info(f"Image size: {width}x{height} ({orig_format})")
         
         # --- 1️⃣ SIZE CHECK (100px rule) ---
         if width < 100 or height < 100:
-            print(f"⚠️ Image too small ({width}x{height}), skipping.")
+            logger.warning(f"Image too small ({width}x{height}), skipping.")
             return None, orig_format
             
         # --- 2️⃣ ASPECT RATIO CHECK ---
         if is_bad_aspect_ratio(width, height):
-            print(f"⚠️ Abnormal aspect ratio ({width/height:.2f}), skipping.")
+            logger.warning(f"Abnormal aspect ratio ({width/height:.2f}), skipping.")
             return None, orig_format
 
         # --- 3️⃣ COLOR VARIANCE CHECK ---
         if is_low_color_variance(img):
-            print("⚠️ Single-color / blank image detected, skipping.")
+            logger.warning("Single-color / blank image detected, skipping.")
             return None, orig_format
 
         # --- 4️⃣ OVER-COMPRESSION CHECK ---
         file_size = len(response.content)
         if is_overcompressed(file_size, width, height):
-            print("⚠️ Over-compressed / low quality image, skipping.")
+            logger.warning("Over-compressed / low quality image, skipping.")
             return None, orig_format
 
         # --- 5️⃣ DUPLICATE CHECK ---
         dup_filename = is_duplicate(img, target_format)
         if dup_filename:
-            print(f"♻️ Same image already processed as {target_format} ({dup_filename}), reusing.")
+            logger.info(f"Same image already processed as {target_format} ({dup_filename}), reusing.")
             return dup_filename, orig_format
 
         # --- 6️⃣ FORMAT CONVERSION ---
@@ -174,9 +174,9 @@ def download_and_convert_thumbnail(img_url, target_format='PNG'):
         # Save
         img.save(file_path, target_format, optimize=True)
         register_image_hash(img, filename, target_format)
-        print(f"✅ Image saved: {filename} ({target_format})")
+        logger.info(f"Image saved: {filename} ({target_format})")
         
         return filename, orig_format
     except Exception as e:
-        print(f"❌ Image processing error: {e}")
+        logger.error(f"Image processing error: {e}")
         return None, None

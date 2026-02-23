@@ -3,6 +3,7 @@
 /data
 /images
 __pycache__/
+tests/__pycache__/
 *.py[cod]
 .env
 config.json

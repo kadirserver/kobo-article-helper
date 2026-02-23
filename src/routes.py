@@ -4,7 +4,8 @@ import json
 
 from flask import send_from_directory, abort, render_template
 
-from src.config import app, ARTICLES_DIR, IMAGES_DIR, DATA_DIR, UUID_PATTERN, VDS_IP, WEB_PORT
+from src.config import app, ARTICLES_DIR, IMAGES_DIR, DATA_DIR, UUID_PATTERN, VDS_IP, WEB_PORT, logger
+from src.utils import format_turkish_date, extract_snippet_from_html
 
 
 # --- WEB SERVER (FLASK) ---
@@ -65,11 +66,11 @@ def serve_article(filename):
             "]+", flags=re.UNICODE
         )
         # content = emoji_pattern.sub(lambda m: f'<span class="emoji">{m.group(0)}</span>', content)
-        # print("💡 Emojis detected and marked.")
+        # logger.info("Emojis detected and marked.")
 
         # --- DIV TO P REPLACEMENT (E-Reader Compatibility) ---
         content = content.replace('<div', '<p').replace('</div', '</p')
-        print("📝 DIV tags replaced with P tags.")
+        logger.info("DIV tags replaced with P tags.")
 
         # --- DYNAMIC OG METADATA INJECTION (VIA JSON) ---
         if mapping:
@@ -81,7 +82,7 @@ def serve_article(filename):
                 local_img_url = f"{VDS_IP}/images/{og_local}"
                 og_tags.append(f'<meta property="og:image" content="{local_img_url}">')
                 og_tags.append(f'<meta name="twitter:image" content="{local_img_url}">')
-                print(f"🔗 og:image injected: {og_local}")
+                logger.info(f"og:image injected: {og_local}")
 
             # 2. Other Metadata
             for key in ['og:title', 'og:description', 'og:type', 'og:url']:
@@ -110,7 +111,7 @@ def serve_article(filename):
                 content = content.replace(f'src="{original_url}"', f'src="{local_url}"')
                 content = content.replace(f"src='{original_url}'", f"src='{local_url}'")
             if body_maps:
-                print(f"🔄 {len(body_maps)} body image(s) replaced with local links.")
+                logger.info(f"{len(body_maps)} body image(s) replaced with local links.")
 
         # --- FOOTER/HEADER LINK INJECTION ---
 
@@ -136,10 +137,10 @@ def serve_article(filename):
 
         if '</h2>' in content:
             content = re.sub(r'(</h2>)', r'\1' + header_html, content, count=1, flags=re.IGNORECASE)
-            print("🔗 Link added after H2.")
+            logger.info("Link added after H2.")
         elif '<p' in content:
             content = re.sub(r'(<p)', header_html + r'\1', content, count=1, flags=re.IGNORECASE)
-            print("🔗 Link added before first P.")
+            logger.info("Link added before first P.")
         elif '<body>' in content:
             content = content.replace('<body>', f'<body>{header_html}', 1)
         else:
@@ -148,7 +149,7 @@ def serve_article(filename):
         return content
 
     except Exception as e:
-        print(f"Read error: {e}")
+        logger.error(f"Read error: {e}")
         abort(500)
 
 
@@ -194,10 +195,55 @@ def index():
         for f in os.listdir(ARTICLES_DIR):
             if f.endswith('.html') and UUID_PATTERN.match(f):
                 path = os.path.join(ARTICLES_DIR, f)
+                
+                # Fetch metadata from corresponding JSON
+                uuid_name = f.replace('.html', '')
+                json_path = os.path.join(DATA_DIR, f"{uuid_name}.json")
+                
+                title = f
+                description = ""
+                thumbnail = None
+                date_str = ""
+                
+                if os.path.exists(json_path):
+                    try:
+                        with open(json_path, 'r', encoding='utf-8') as jf:
+                            mapping = json.load(jf)
+                            
+                        # Use mapped title or fallback
+                        title = mapping.get('og_title') or f
+                        # Use mapped description
+                        description = mapping.get('og_description') or ""
+                        # Use local mapped thumbnail
+                        thumbnail = mapping.get('og_image_local')
+                        # Mapped date
+                        date_str = mapping.get('mail_date', "")
+                    except Exception:
+                        pass
+                
+                # Fallback Description logic
+                if not description:
+                    try:
+                        with open(path, 'r', encoding='utf-8') as hf:
+                            content = hf.read()
+                            description = extract_snippet_from_html(content, max_length=150)
+                    except Exception:
+                        pass
+                        
+                # Ensure date is populated
+                if not date_str:
+                    import datetime
+                    from src.config import TR_TZ
+                    date_str = format_turkish_date(datetime.datetime.now(TR_TZ))
+
                 files.append({
                     'name': f,
                     'time': os.path.getctime(path),
-                    'display_name': f
+                    'display_name': f,
+                    'title': title,
+                    'description': description,
+                    'thumbnail': thumbnail,
+                    'date_str': date_str
                 })
         
         files.sort(key=lambda x: x['time'], reverse=True)
@@ -223,5 +269,5 @@ def index():
 
 
 def run_web_server():
-    print(f"🌍 Web server started: {VDS_IP}:{WEB_PORT}")
+    logger.info(f"Web server started: {VDS_IP}:{WEB_PORT}")
     app.run(host='0.0.0.0', port=WEB_PORT, debug=False, use_reloader=False)
