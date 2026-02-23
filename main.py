@@ -1,6 +1,6 @@
 import threading
 
-from src.config import app, ARTICLES_DIR, IMAGES_DIR, DATA_DIR
+from src.config import app, ARTICLES_DIR, IMAGES_DIR, DATA_DIR, logger
 from src.routes import run_web_server
 from src.mail_processor import process_message, check_mail_loop
 from src.cleanup import cleanup_old_articles, delete_article_data
@@ -12,6 +12,7 @@ import src.routes  # noqa: F401
 
 # --- MAIN ENTRY POINT ---
 if __name__ == "__main__":
+    logger.info("Application starting up...")
     # Initial cleanup
     cleanup_old_articles()
     

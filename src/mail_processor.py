@@ -9,7 +9,7 @@ from imap_tools import MailBox, A
 
 from src.config import (
     ARTICLES_DIR, DATA_DIR, IMAP_SERVER, EMAIL_USER, EMAIL_PASS,
-    VDS_IP, WEB_PORT, TR_TZ
+    VDS_IP, WEB_PORT, TR_TZ, logger
 )
 from src.image_utils import (
     seen_hashes, extract_meta_tag, extract_og_image,
@@ -54,7 +54,7 @@ def process_message(msg):
         
         # FIX: Check for year 1900 (common fallback or parsing error)
         if mail_date.year <= 1900:
-            print(f"⚠️ Invalid date detected ({mail_date}), falling back to current time.")
+            logger.warning(f"Invalid date detected ({mail_date}), falling back to current time.")
             mail_date = datetime.now(TR_TZ)
             
         mail_date_str = format_turkish_date(mail_date)
@@ -101,14 +101,14 @@ def process_message(msg):
     # A. Detect og:image and process as PNG
     if og_url:
         if og_url in avatar_url_blacklist:
-            print(f"🚫 Skipping og:image (in avatar blacklist): {og_url}")
+            logger.info(f"Skipping og:image (in avatar blacklist): {og_url}")
         else:
-            print(f"📸 og:image detected, processing as PNG: {og_url}")
+            logger.info(f"og:image detected, processing as PNG: {og_url}")
             mapping["og_image_local"], _ = get_thumb(og_url, 'PNG')
 
     # B. If no og:image, fallback (select from body)
     if not mapping["og_image_local"]:
-        print("⚠️ No meta image or download failed, searching body for images...")
+        logger.warning("No meta image or download failed, searching body for images...")
         img_tags = re.findall(r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>', content, re.IGNORECASE)
         
         # Find best cover image (first image not in blacklist)
@@ -119,7 +119,7 @@ def process_message(msg):
             saved_png, _ = get_thumb(img_url, 'PNG')
             if saved_png:
                 mapping["og_image_local"] = saved_png
-                print(f"🖼️ Fallback thumbnail selected: {saved_png}")
+                logger.info(f"Fallback thumbnail selected: {saved_png}")
                 break
 
     # 3.3. Process all body images and clean up PNGs
@@ -129,7 +129,7 @@ def process_message(msg):
         
         # --- 🟢 DISPLAY-SIZE AND AVATAR CHECK (HTML Attribute based) ---
         if is_avatar_tag(full_tag):
-            print(f"🗑️ Avatar/Icon detected, removing: {img_url}")
+            logger.info(f"Avatar/Icon detected, removing: {img_url}")
             return ""
 
         # --- 🔵 FILE SIZE AND FORMAT CHECK (Download/Processing based) ---
@@ -139,7 +139,7 @@ def process_message(msg):
         if not saved_jpg:
             # Does not meet standards (below 100px) or download/open error
             if orig_fmt:
-                print(f"🗑️ Small image ({orig_fmt}) removed: {img_url}")
+                logger.info(f"Small image ({orig_fmt}) removed: {img_url}")
                 return "" # Remove small images from HTML regardless of format
             return full_tag # If download error, keep original link (may be temporary)
             
@@ -160,9 +160,9 @@ def process_message(msg):
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(mapping, f, ensure_ascii=False, indent=4)
             
-        print(f"✅ Article and mapping saved: {uuid_name}")
+        logger.info(f"Article and mapping saved: {uuid_name}")
     except Exception as e:
-        print(f"❌ Save error: {e}")
+        logger.error(f"Save error: {e}")
 
     # 5. Send to Instapaper
     public_link = f"{VDS_IP}/read/{html_file}"
@@ -171,19 +171,19 @@ def process_message(msg):
 
 # --- MAIL LISTENER (IMAP) ---
 def check_mail_loop():
-    print(f"📧 Listening active. Broadcasting on {VDS_IP}:{WEB_PORT}...")
+    logger.info(f"Listening active. Broadcasting on {VDS_IP}:{WEB_PORT}...")
     while True:
         try:
             with MailBox(IMAP_SERVER).login(EMAIL_USER, EMAIL_PASS) as mailbox:
                 for msg in mailbox.fetch(A(seen=False), mark_seen=True):
-                    print(f"📩 New Mail: {msg.subject}")
+                    logger.info(f"New Mail: {msg.subject}")
                     
                     # Process the message
                     process_message(msg)
                     
                     
         except Exception as e:
-            print(f"⚠️ Mail check error: {e}")
+            logger.error(f"Mail check error: {e}")
         
-        print("🔍 Mail check complete, no new mail. Rechecking in 60 seconds.")
+        logger.info("Mail check complete, no new mail. Rechecking in 60 seconds.")
         time.sleep(60)

@@ -1,7 +1,7 @@
 import os
 import json
 
-from src.config import ARTICLES_DIR, DATA_DIR, IMAGES_DIR, MAX_ARTICLES, UUID_PATTERN
+from src.config import ARTICLES_DIR, DATA_DIR, IMAGES_DIR, MAX_ARTICLES, UUID_PATTERN, logger
 
 
 # --- CLEANUP FUNCTIONS ---
@@ -31,15 +31,15 @@ def delete_article_data(filename):
             
             # Delete JSON file
             os.remove(json_path)
-            print(f"🗑️ JSON and local images deleted: {uuid_name}.json")
+            logger.info(f"JSON and local images deleted: {uuid_name}.json")
 
         # 2. Delete HTML file
         if os.path.exists(html_path):
             os.remove(html_path)
-            print(f"🗑️ Article deleted: {filename}")
+            logger.info(f"Article deleted: {filename}")
             
     except Exception as e:
-        print(f"⚠️ Deletion error ({filename}): {e}")
+        logger.error(f"Deletion error ({filename}): {e}")
 
 
 def cleanup_old_articles():
@@ -62,6 +62,6 @@ def cleanup_old_articles():
             for i in range(files_to_delete):
                 delete_article_data(files_with_time[i][0])
             
-            print(f"✅ {files_to_delete} old article(s) and their data cleaned up.")
+            logger.info(f"{files_to_delete} old article(s) and their data cleaned up.")
     except Exception as e:
-        print(f"⚠️ Cleanup error: {e}")
+        logger.error(f"Cleanup error: {e}")
